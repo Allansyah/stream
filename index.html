@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
   <head>
     <title>LiveKit Web Stream</title>
@@ -50,6 +50,151 @@
           const element = track.attach();
           document.getElementById("video-container").appendChild(element);
         });
+      }
+    </script>
+  </body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LiveKit Web Stream</title>
+  </head>
+  <style>
+    /* RESET DASAR */
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      min-height: 100vh; /* 🔒 TAMBAHAN AMAN */
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    /* TOMBOL */
+    button {
+      padding: 10px 16px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    /* CONTAINER VIDEO */
+    #video-container {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    /* VIDEO ELEMENT */
+    #video-container video {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    #video-container audio {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      #video-container video {
+        height: 150px;
+      }
+    }
+  </style>
+
+  <body>
+    <h2>Tugas Web Streaming</h2>
+
+    <button id="join-host">Join as Host</button>
+    <button id="join-viewer">Join as Viewer</button>
+
+    <div id="video-container"></div>
+
+    <script type="module">
+      import * as LiveKit from "https://unpkg.com/livekit-client/dist/livekit-client.esm.mjs";
+
+      const LIVEKIT_URL = "wss://stream-m8zyxd6t.livekit.cloud";
+      const TOKEN_SERVER = "http://192.168.1.69:3001";
+      let room = null;
+      let joined = false;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const joinHostBtn = document.getElementById("join-host");
+        const joinViewerBtn = document.getElementById("join-viewer");
+
+        joinHostBtn.onclick = () => join("host");
+        joinViewerBtn.onclick = () => join("viewer");
+      });
+
+      async function join(role) {
+        console.log("JOIN AS:", role);
+
+        const name = role + "-" + Math.floor(Math.random() * 1000);
+
+        const token = await fetch(
+          `${TOKEN_SERVER}/token?room=testroom&name=${name}&role=${role}`
+        ).then((res) => res.text());
+
+        console.log("TOKEN:", token);
+
+        const room = new LiveKit.Room({
+          autoSubscribe: true,
+        });
+
+        await room.connect(LIVEKIT_URL, token);
+        console.log("CONNECTED TO ROOM");
+
+        if (role === "host") {
+          await room.localParticipant.enableCameraAndMicrophone();
+          console.log("CAMERA & MIC ENABLED");
+        }
+
+        room.on(LiveKit.RoomEvent.TrackPublished, (pub) => {
+          pub.setSubscribed(true);
+        });
+
+        room.on(LiveKit.RoomEvent.TrackSubscribed, (track) => {
+          console.log("TRACK SUBSCRIBED:", track.kind);
+          const element = track.attach();
+          document.getElementById("video-container").appendChild(element);
+        });
+
+        //   room.on(LiveKit.RoomEvent.TrackSubscribed, (track) => {
+        //     const el = track.attach();
+        //     el.autoplay = true;
+        //     el.playsInline = true;
+        //     if (track.kind === "audio") el.muted = true;
+        //     document.getElementById("video-container").appendChild(el);
+        //   }
+        // );
       }
     </script>
   </body>
